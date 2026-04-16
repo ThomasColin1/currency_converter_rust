@@ -3,6 +3,9 @@
 
 use std::collections::HashMap;
 
+pub const UPDATE_SECONDS: u64 = 60;
+pub const BASE_API_URL: &str = "https://api.exchangerate-api.com/v4/latest/USD"; 
+
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 enum Currency{
     EUR,
@@ -32,7 +35,7 @@ impl CurrencyConverter {
             Currency::JPY => "JPY",
         };
 
-        let url = "https://api.exchangerate-api.com/v4/latest/USD";
+        let url = BASE_API_URL;
         let json: serde_json::Value = reqwest::blocking::get(url)?.json()?;
 
         if let Some(price) = json["rates"][symbol].as_f64() {
@@ -62,7 +65,7 @@ impl CurrencyConverter {
     fn is_dated(&self, code: &Currency) -> bool {
         match self.currencies.get(code) {
             None => true, 
-            Some(entry) => entry.last_updated.elapsed() > std::time::Duration::from_secs(60),
+            Some(entry) => entry.last_updated.elapsed() > std::time::Duration::from_secs(UPDATE_SECONDS),
         }
     }
 }
