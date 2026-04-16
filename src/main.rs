@@ -5,7 +5,7 @@ use std::collections::HashMap;
 enum Currency{
     EUR,
     USD,
-    YEN
+    JPY
 }
 
 struct CurrencyConverter{
@@ -17,9 +17,25 @@ impl CurrencyConverter {
         let currencies = HashMap::from([
             (Currency::EUR, 0.5),
             (Currency::USD, 1.0),
-            (Currency::YEN, 2.0),
+            (Currency::JPY, 2.0),
         ]);
         Self { currencies }
+    }
+    pub fn update_from_web(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let url = "https://api.exchangerate-api.com/v4/latest/USD";
+        let json: serde_json::Value = reqwest::blocking::get(url)?.json()?;
+
+        if let Some(eur) = json["rates"]["EUR"].as_f64() {
+            self.currencies.insert(Currency::EUR, eur);
+        }
+        if let Some(usd) = json["rates"]["USD"].as_f64() {
+            self.currencies.insert(Currency::USD, usd);
+        }
+        if let Some(jpy) = json["rates"]["JPY"].as_f64() {
+            self.currencies.insert(Currency::JPY, jpy);
+        }
+
+        Ok(())
     }
     pub fn convert(&self, from: &Currency, to: &Currency, quantity: f64) 
         -> Option<f64> {
@@ -33,16 +49,21 @@ impl CurrencyConverter {
 
 
 fn main() {
-    let converter = CurrencyConverter::new();
+    let mut converter = CurrencyConverter::new();
 
     let quantity = 100.00;
     let from = Currency::EUR;
     let to = Currency::USD;
 
-    match converter.convert(&from, &to, quantity) {
-        Some(result) => {
-            println!("{quantity} {:?} is {result:.2} {:?}", from , to);
+    if let Err(e) = converter.update_from_web() {
+        println!("Error while updating from API : {}", e);
+    } else {
+        match converter.convert(&from, &to, quantity) {
+            Some(result) => {
+                println!("{quantity} {:?} is {result:.2} {:?}", from , to);
+            }
+            None => println!("Error: unsupported currency."),
         }
-        None => println!("Error: unsupported currency."),
     }
+
 }
