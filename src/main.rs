@@ -2,11 +2,12 @@
 //TODO : make a simple TUI
 
 use std::collections::HashMap;
+use strum_macros::AsRefStr;
 
 pub const UPDATE_SECONDS: u64 = 60;
 pub const BASE_API_URL: &str = "https://api.exchangerate-api.com/v4/latest/USD"; 
 
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone, AsRefStr)]
 enum Currency{
     EUR,
     USD,
@@ -33,12 +34,7 @@ impl CurrencyConverter {
 
     }
     fn refresh_currency(&mut self, code: Currency) -> Result<(), Box<dyn std::error::Error>> {
-        //TODO : no repetition ?
-        let symbol = match code {
-            Currency::EUR => "EUR",
-            Currency::USD => "USD",
-            Currency::JPY => "JPY",
-        };
+        let symbol = code.as_ref();
 
         let url = BASE_API_URL;
         let response: RatesResponse = reqwest::blocking::get(url)?.json()?;
