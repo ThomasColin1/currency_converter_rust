@@ -13,6 +13,11 @@ enum Currency{
     JPY
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct RatesResponse{
+    rates: HashMap<String, f64>
+}
+
 struct CurrencyValueTuple {
     price: f64,
     last_updated: std::time::Instant
@@ -36,9 +41,9 @@ impl CurrencyConverter {
         };
 
         let url = BASE_API_URL;
-        let json: serde_json::Value = reqwest::blocking::get(url)?.json()?;
+        let response: RatesResponse = reqwest::blocking::get(url)?.json()?;
 
-        if let Some(price) = json["rates"][symbol].as_f64() {
+        if let Some(&price) = response.rates.get(symbol) {
             self.currencies.insert(code, CurrencyValueTuple {
                 price,
                 last_updated: std::time::Instant::now(),
